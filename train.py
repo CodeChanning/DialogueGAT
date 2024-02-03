@@ -26,7 +26,7 @@ def cli_main():
 
     parser.add_argument("--epochs", default=100, type=int)
     parser.add_argument("--patience", default=5, type=int)
-    parser.add_argument("--batch_size", default=4, type=int)
+    parser.add_argument("--batch_size", default=1, type=int)
     parser.add_argument("--lr", type=float, default=1e-5)
     parser.add_argument("--l2", type=float, default=1e-6)
 

@@ -142,6 +142,7 @@ class DialogueGAT(nn.Module):
         lids = torch.cat(lids)
         return g, feat, etypes, umask, pids, lids, ul
 
+    # forward propagation function
     def forward(self, x, length, ps, py):
         emb_x = self.word_emb(x)
         emb_x = emb_x.unsqueeze(1)
@@ -187,6 +188,7 @@ class DialogueGAT(nn.Module):
         out = self.output(ox)
         return out
 
+    # return loss, predicted value, and actual value from this step
     def shared_step(self, batch, loss_func, device):
         keys, x, y, ps, length, py = batch
         x, y, py = (x.to(device), y.float().to(device), py.float().to(device))
@@ -194,6 +196,7 @@ class DialogueGAT(nn.Module):
         loss = loss_func(y_hat, y.reshape(-1, 1))
         return loss, y_hat, y
 
+    # 1 epoch of neural network training
     def run_epoch(
         self, dataloader, loss_func, optimizer=None, device="cuda", stage="Train",
     ):
@@ -202,34 +205,48 @@ class DialogueGAT(nn.Module):
         else:
             self.eval()
 
+        #https://www.leaky.ai/dataloader
+        # for i, y in dataloader:
+        #     print(i)
+
+        # create progress bar
         pbar = tqdm(dataloader, desc=stage.ljust(6))
         loss_step, y_prob_step, y_true_step = [], [], []
+        # iterate over each batch (set of samples from dataloader)
         for batch in pbar:
             if stage == "Train":
                 optimizer.zero_grad()
+                # calculate loss, predicted values, and actual values for this epoch
                 loss, y_prob, labels = self.shared_step(batch, loss_func, device)
+                # back propagate
                 loss.backward()
                 torch.nn.utils.clip_grad_norm_(self.parameters(), 15)
+                # step forward to optimize
                 optimizer.step()
             else:
                 with torch.no_grad():
+                    # calculate loss, predicted values, and actual values for this epoch
                     loss, y_prob, labels = self.shared_step(batch, loss_func, device)
 
+            # add loss, predicted, and actual values for this epoch to the overall list
             loss_step.append(loss.item())
             y_prob_step.append(y_prob.data.cpu().numpy())
             y_true_step.append(labels.data.cpu().numpy())
 
+            # update progress bar with how much loss from this epoch
             pbar.set_postfix({"loss": loss_step[-1]})
 
         pbar.close()
         y_pred = np.concatenate(y_prob_step)
         y_true = np.concatenate(y_true_step)
 
+        # calculate the mean squared error between predicted values and actual
         metrics = {
             "loss": mean_squared_error(y_true, y_pred),
         }
         return metrics
 
+    # add model-specific arguments - can set when calling the model
     @staticmethod
     def add_model_specific_args(parent_parser):
         parser = ArgumentParser(parents=[parent_parser], add_help=False)
@@ -240,6 +257,7 @@ class DialogueGAT(nn.Module):
         parser.add_argument("--sen_pos", action="store_true")
         return parser
 
+    # build the model for running
     @staticmethod
     def build_model(args):
         lr = args.lr
@@ -253,9 +271,11 @@ class DialogueGAT(nn.Module):
 
         device = "cuda" if torch.cuda.is_available() and args.use_gpu else "cpu"
 
+        # extract the data pkl file
         with open("{}data_sample.pkl".format(args.data_path), "rb") as f:
             all_data, vocab, word2idx, W, max_p_len, max_sen_len = pickle.load(f)
- 
+
+        # subset the data for the desired year & split between train/test/val datasets
         split_data = get_data(all_data, year=args.year)
 
         gid2p = []
@@ -266,6 +286,7 @@ class DialogueGAT(nn.Module):
         gid2p = list(set(gid2p))
         p2gid = {p: gid for gid, p in enumerate(gid2p)}
 
+        # create datasets
         train_set = ECCDataset(
             split_data["train"], all_data, word2idx, 256, target=args.target,
         )
@@ -276,28 +297,30 @@ class DialogueGAT(nn.Module):
             split_data["test"], all_data, word2idx, 256, target=args.target,
         )
 
+        # create dataloader - which is a way to load data in batches
         train_dataloader = data.DataLoader(
             train_set,
             batch_size=args.batch_size,
             collate_fn=collate_fn,
             pin_memory=True,
-            num_workers=4,
+            # num_workers=4,
         )
         val_dataloader = data.DataLoader(
             val_set,
             batch_size=args.batch_size,
             collate_fn=collate_fn,
             pin_memory=True,
-            num_workers=4,
+            # num_workers=4,
         )
         test_dataloader = data.DataLoader(
             test_set,
             batch_size=args.batch_size,
             collate_fn=collate_fn,
             pin_memory=True,
-            num_workers=4,
+            # num_workers=4,
         )
 
+        # create DiaglogueGAT model with desired inputs
         model = DialogueGAT(
             vocab,
             W,
@@ -316,6 +339,7 @@ class DialogueGAT(nn.Module):
 
         loss_func = nn.MSELoss()
 
+        # return datasets, model, optimizer, loss function, and device for training, testing, and other later use
         return (
             train_dataloader,
             val_dataloader,
