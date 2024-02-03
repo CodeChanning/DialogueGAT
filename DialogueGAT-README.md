@@ -1,8 +1,9 @@
-# DialogueGAT Research Replication
+# README from original repo:
 
-## Goal:
+# DialogueGAT
 
-We aim to replicate the results of the DialogueGAT research by using the same code and data as the research. After reproducing the results, we will test the model using newer data.
+## Data
+Refer to [preprocess.ipynb](data_sample/preprocess.ipynb) to construct the experiment dataset.
 
 ## Run the experiment
 
