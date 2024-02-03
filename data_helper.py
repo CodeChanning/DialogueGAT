@@ -30,10 +30,15 @@ def get_data(data, year=2015):
 
     all_keys = sorted(all_keys)
     train_size, val_size = int(len(all_keys) * 0.7), int(len(all_keys) * 0.1)
+    # split_data = {
+    #     "train": all_keys[:train_size],
+    #     "val": all_keys[train_size : train_size + val_size],
+    #     "test": all_keys[train_size + val_size :],
+    # }
     split_data = {
-        "train": all_keys[:train_size],
-        "val": all_keys[train_size : train_size + val_size],
-        "test": all_keys[train_size + val_size :],
+        "train": all_keys,
+        "val": all_keys,
+        "test": all_keys,
     }
     return split_data
 
@@ -100,7 +105,7 @@ def collate_fn(data):
 
 
 if __name__ == "__main__":
-    with open("../data/data.pkl", "rb") as f:
+    with open("../data_sample/data_sample.pkl", "rb") as f:
         all_data, vocab, word2idx, W, max_p_len, max_sen_len = pickle.load(f)
 
     split_data = get_data(all_data, year=2015)
