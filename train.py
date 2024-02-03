@@ -15,7 +15,7 @@ def cli_main():
     # ------------
     parser = ArgumentParser()
 
-    parser.add_argument("--data_path", type=str, default="data/")
+    parser.add_argument("--data_path", type=str, default="data_sample/")
     parser.add_argument("--year", type=int, default=2015)
     parser.add_argument("--target", type=int, default=3)
 

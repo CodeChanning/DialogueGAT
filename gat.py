@@ -253,9 +253,9 @@ class DialogueGAT(nn.Module):
 
         device = "cuda" if torch.cuda.is_available() and args.use_gpu else "cpu"
 
-        with open("{}data_swd.pkl".format(args.data_path), "rb") as f:
+        with open("{}data_sample.pkl".format(args.data_path), "rb") as f:
             all_data, vocab, word2idx, W, max_p_len, max_sen_len = pickle.load(f)
-
+ 
         split_data = get_data(all_data, year=args.year)
 
         gid2p = []
